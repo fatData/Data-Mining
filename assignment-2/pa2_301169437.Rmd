@@ -1,0 +1,121 @@
+title: Programming Assignment 2
+author: <Aaftab Jandeer - 301169437>
+output:
+ html_document:
+ mathjax: default
+---
+
+```{r include=FALSE}
+library(caTools)
+#library(rpart)
+library(tree)
+#library(caret)
+```
+
+
+
+## Task 1
+```{r}
+theData <- read.csv(file="./titanic3.csv", header=TRUE, sep=",")
+theData <- theData[-nrow(theData),]
+theData <- as.data.frame(theData)
+
+is.na(theData$pclass[theData$pclass =='']) <- TRUE
+is.na(theData$survived[theData$survived =='']) <- TRUE
+is.na(theData$name[theData$name =='']) <- TRUE
+is.na(theData$sex[theData$sex =='']) <- TRUE
+is.na(theData$sibsp[theData$sibsp =='']) <- TRUE
+is.na(theData$parch[theData$parch =='']) <- TRUE
+is.na(theData$ticket[theData$ticket =='']) <- TRUE
+is.na(theData$fare[theData$fare =='']) <- TRUE
+is.na(theData$cabin[theData$cabin =='']) <- TRUE
+is.na(theData$embarked[theData$embarked =='']) <- TRUE
+is.na(theData$boat[theData$boat =='']) <- TRUE
+is.na(theData$home.dest[theData$home.dest =='']) <- TRUE
+
+set.seed(1)
+labelVector <- theData[,1]                              #extracts labels from data
+splitter = sample.split(labelVector, SplitRatio= 0.80)   
+train = subset(theData, splitter == TRUE)
+test = subset(theData, splitter == FALSE)
+```
+<read csv file, fill in empty cells with "NA" and split the data into 80% train and 20% test>
+
+
+
+## Task 2
+```{r}
+sapply(train, function(x) sum(is.na(x)))
+sapply(test, function(x) sum(is.na(x)))
+```
+<determine missing values for each attribute in the training and test data set> 
+
+
+
+## Task 3
+<Features for predicting passenger survival:     pclass, sex, age, sibsp, parch>
+
+<"pclass" was chosen because I believe being in an upper class section of the boat provided greater resources that may have helped with surviving the crash.>
+<"sex" was chosen because I beleive as a generalization, males may have been stronger than females which allowed them to be quickier and safer when escaping the sinking ship>
+<"age" was chosen because I beleive if the passenger was a senior or a young child they would have the least probability of survival due to their lack of strength and speed>
+<"sibsp" was chosen because I beleive if the passenger had more family members their chance of survival would be lower since they would be worrying about other peoples survival>
+<"parch" was chosen because I beleive if the passenger had more family members their chance of survival would be lower since they would be worrying about other peoples survival >
+
+
+
+## Task 4
+```{r}
+avgAge <- median(theData$age, na.rm=TRUE)
+theData$age <- replace(theData$age, which(is.na(theData$age)), avgAge)
+```
+<handle missing values in "age" by calculating the median age and then replace "NA" values with the median>
+
+<For the remainder of the features that have missing values I would not do anything to them because I beleive those features do not influence a passengers chance of survival>
+
+
+
+## Task 5
+```{r}
+newTrain <- subset(train, select = -c(name, ticket, cabin, boat, body, home.dest))
+newTest <- subset(test, select = -c(name, ticket, cabin, boat, body, home.dest))
+ 
+decisionTree <- tree(as.factor(survived)~., newTrain)
+plot(decisionTree)
+text(decisionTree, pretty=0)
+
+prediction <- predict(decisionTree, newTest, type = "class")
+with(newTest, table(prediction, newTest$survived))
+```
+<size of the tree = 13 nodes>
+<accuracy of tree on test data = 83%>
+
+
+
+## Task 6
+<top 3 features in decreasing order: sex, pclass, fare>
+
+<These fetures were chosen because if we look at the structure of the tree structure we can see that the attributes at the top that are chosen for the split are the most important, therefore from our tree we see that sex is taken as the root and then pclass and fare are the attributes chosen below>
+
+<We notice that when a passenger is a male and passenger class is less than 2.5 they survived and the male passenger also survived if passenger class was greater than 2.5 with fare being less than 23. When the passenger is female we notice that they only survived if their age was less than 9.5 and they had less than 2 siblings or spouses aboard. Furthermore if we compare males to females we can see that if a passenger is male then passenger class influences their survival more, but if passenger is female then age influences their survival more>
+
+
+
+## Task 7
+```{r}
+
+crossVal <- cv.tree(decisionTree, FUN = prune.misclass)
+plot(crossVal)
+
+pruneTree = prune.misclass(decisionTree, best = 5)
+
+plot(pruneTree)
+text(pruneTree, pretty=0)
+
+#prediction2 <- predict(pruneTree, newTest, type = "class")
+#with(newTest, table(prediction2, newTest$survived))
+
+```
+<size of the tree = 11 nodes>
+
+
+
