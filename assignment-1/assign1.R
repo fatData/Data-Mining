@@ -1,6 +1,4 @@
 # Programming Assignment 1
-# Name: Aaftab Jandeer
-# Student No: 301169437
 
 require(stats)
 require(ggplot2)
