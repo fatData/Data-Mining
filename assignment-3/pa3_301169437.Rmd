@@ -1,0 +1,131 @@
+---
+title: Programming Assignment 3
+author: Aaftab Jandeer - 301169437
+output: html_notebook
+---
+
+
+```{r include=FALSE}
+library(caTools)
+library(tree)
+library(randomForest)
+library(pROC)
+library(caret)
+library("e1071")
+```
+
+
+##Reading Training and Test data
+```{r}
+newTrain <- read.csv(file="./Titanic.Train.csv", colClasses = c('factor', 'factor', 'factor', 'numeric', 'numeric', 'numeric', 'numeric'), header=TRUE, sep=",")
+
+newTest <- read.csv(file="./Titanic.Test.csv", colClasses = c('factor', 'factor', 'factor', 'numeric', 'numeric', 'numeric', 'numeric'), header=TRUE, sep=",")
+```
+
+
+
+## Task 1
+```{r}
+randForest <- randomForest(as.factor(survived)~., data = newTrain , importance=TRUE, ntree=100)
+
+prediction <- predict(randForest, newdata=newTest, type="class")
+
+accuracy <- mean(prediction == newTest$survived)
+accuracy
+
+predictionAgain <- predict(randForest, newdata=newTest, type="prob")
+theROC <- roc(newTest$survived, predictionAgain[,1])
+plot.roc(theROC)
+auc(theROC)
+```
+
+
+Accuracy of the model is 82%
+Area under the curve is 0.90
+Accuracy of both the random forest and decision tree were basically the same 82% and 83% so we can say performace was the same in this case. However, I do believe Random forest is one of the best models that can be used for classification since it is easy to use and tune and provides good level of accuracy. Moreover it is more robust than a decision tree since Random forest is a collection of decision trees which also limits overfitting and error.
+
+
+
+## Task 2
+```{r}
+importance(randForest)
+varImpPlot(randForest)
+```
+
+
+Top three most important attributes in dereasing order based on analyzing the Gini impurity graph:     sex, age, fare
+These attributes are relevant to the classification task because their values will have the most influence on the predicition of whether the passeneger survived or not.
+
+
+
+## Task 3
+```{r}
+fit <- train(as.factor(survived)~., data=newTrain, method="glmnet", family="binomial")
+varImp(fit)
+```
+
+
+Three most significant attributes in our model:        sex, pclass, sibsp
+
+
+
+## Task 4
+```{r}
+logisticPred = predict(fit, newdata=newTest)
+logisticAccuracy <- table(logisticPred, newTest$survived)
+logisticAccuracy
+sum(diag(logisticAccuracy))/sum(logisticAccuracy)
+
+logisticPredAgain = predict(fit, newdata=newTest, type="prob")
+theROC2 <- roc(newTest$survived, logisticPredAgain[,1])
+plot.roc(theROC2)
+auc(theROC2)
+```
+
+
+Accuracy of the model is: 81%
+Area under the curve is: 0.85
+
+
+
+## Task 5
+```{r}
+trainSVMLinear <- svm(as.factor(survived)~., data = newTrain, kernel = "linear")
+trainSVMLinearTuned <- tune.svm(as.factor(survived)~., data = newTrain, kernel = "linear", gamma = 2^(-1:1), cost = 2^(2:4))
+#trainSVMLinearTuned
+trainSVMLinearTunedFinal <- svm(as.factor(survived)~., data = newTrain, kernel = "linear", gamma = 0.5, cost = 4)
+
+trainSVMRadial <- svm(as.factor(survived)~., data = newTrain, kernel = "radial")
+trainSVMRadialTuned <- tune.svm(as.factor(survived)~., data = newTrain, kernel = "radial", gamma = 2^(-1:1), cost = 2^(2:4))
+#trainSVMRadialTuned
+trainSVMRadialTunedFinal <- svm(as.factor(survived)~., data = newTrain, kernel = "radial", gamma = 0.5, cost = 4)
+```
+
+
+The best parameters for linear kernel was: gamma=0.5 and cost=4
+The best parameters for radial kernel was: gamma=0.5 and cost=4
+Since cost parameter is same for both kernels we can say that the amount both models penalize the SVM data points within the margin is equal and since gamma parameter is also same we can say that both models define "similarity" in the same way. Meaning how similar must 2 points be to be considered the same.
+Here gamma parameter is small which means points that are further away carry more weight therefore our decision boundary line will be more straight and since cost parameter is small it will have smaller support vector therefore lower variance and high bias.
+
+
+
+## Task 6
+```{r}
+#predLinear <- predict(trainSVMLinearTunedFinal, newTest, type = "class")
+#accuracy1 <- table(predLinear, newTest$survived)
+#sum(diag(accuracy1))/sum(accuracy1)
+predRadial <- predict(trainSVMRadialTunedFinal, newTest, type = "class")
+accuracy2 <- table(predRadial, newTest$survived)
+accuracy2
+sum(diag(accuracy2))/sum(accuracy2)       
+
+predRadialAgain <- predict(trainSVMRadialTunedFinal, newTest, type="class")
+theROC3 <- roc(newTest$survived, as.numeric(predRadialAgain))
+plot.roc(theROC3)
+auc(theROC3)
+```
+
+
+Radial SVM model has the highest accuracy of 82%
+Area under the curve is: 0.79
+
