@@ -1,0 +1,115 @@
+---
+title: Programming Assignment 4
+author: Aaftab Jandeer - 301169437
+output: html_notebook
+---
+
+##Read dataset
+```{r}
+library('arules')
+data(Groceries)
+```
+
+
+
+##Task 1
+```{r}
+itemFrequencyPlot(Groceries, type="relative")
+itemFrequencyPlot(Groceries, topN=5, type="relative")
+```
+
+
+Note: There are 2 graphs, one which shows all items and the other showing top 5 most frequent items.
+From this histogram we can see that the most frequent item that occurs in transactions is whole milk, relative to all the other items.
+The top 5 most frequent items (descending order): whole milk, other vegetables, rolls/buns, soda, yogurt
+Then for the remaining items the variance of frequency of items decreases alot more.
+
+
+
+##Task 2
+```{r}
+rules <- apriori(Groceries, parameter=list(support=0.001, target = 'frequent itemsets'))
+summary(rules)
+
+rules2 <- apriori(Groceries, parameter=list(support=0.001, target = 'closed frequent itemsets'))
+summary(rules2)
+
+rules3 <- apriori(Groceries, parameter=list(support=0.001, target = 'maximally frequent itemsets'))
+summary(rules3)
+
+rules4 <- apriori(Groceries, parameter=list(support=0.01, target = 'frequent itemsets'))
+summary(rules4)
+
+rules5 <- apriori(Groceries, parameter=list(support=0.01, target = 'closed frequent itemsets'))
+summary(rules5)
+
+rules6 <- apriori(Groceries, parameter=list(support=0.01, target = 'maximally frequent itemsets'))
+summary(rules6)
+```
+
+
+For parameter support=0.001: freq itemsets = 13492, closed freq itemsets = 13464, maximally freq itemsets = 7794
+For parameter support=0.01: freq itemsets = 333, closed freq itemsets = 333, maximally freq itemsets = 243
+
+
+
+##Task 3
+```{r}
+inspect(head(rules, n = 10, by = "support"))
+```
+
+
+The ten itemsets with highest support are displayed above.
+
+
+
+##Task 4
+
+
+Small number of frequent itemsets is not rare in a dataset like this. If we look at the histogram in task 1 we can see that there is a massive amount of different items. On top of that customers are likely to routinely buy a specific set of items. Which makes sense why there was a relatively small number of frequent itemsets for the min support = 0.01 and also makes sense why numbers of frequent itemsets, closed frequent itemsets, and maximal frequent itemsets are so similar.
+
+
+
+##Task 5
+```{r}
+rules7 <- apriori(Groceries, parameter=list(support=0.01, confidence=0.9, target = 'rules'))
+summary(rules7)
+
+rules8 <- apriori(Groceries, parameter=list(support=0.01, confidence=0.51, target = 'rules'))
+summary(rules8)
+```
+
+
+With min confidence 0.9: 0 rules
+To get more than 10 rules we lower min confidence to 0.51: 12 rules
+
+
+
+##Task 6
+```{r}
+rules9 <- apriori(Groceries, parameter=list(support=0.01, confidence=0.5, target = 'rules'))
+rules9.sub <- subset(rules9, subset = rhs %in% "whole milk")
+inspect(rules9.sub)
+```
+
+
+There are eleven rules that have 'whole milk' in the right hand side
+
+
+
+##Task 7
+```{r}
+inspect(head(rules9.sub, n = 11, by = "lift"))
+```
+
+
+The rules have been ordered by highest lift. We can see that the rule {curd,yogurt} => {whole milk} has highest lift of 2.27
+We know that lift values that are greater than one mean that those association rules are interesting. In our case this means that whole milk is likely to be bought with curd and yogurt.
+
+
+
+
+
+
+
+
