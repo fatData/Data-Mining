@@ -1,6 +1,5 @@
 ---
 title: Programming Assignment 3
-author: Aaftab Jandeer - 301169437
 output: html_notebook
 ---
 
