@@ -1,5 +1,4 @@
 title: Programming Assignment 2
-author: <Aaftab Jandeer - 301169437>
 output:
  html_document:
  mathjax: default
